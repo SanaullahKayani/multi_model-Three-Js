@@ -1,8 +1,9 @@
 
 import * as THREE from 'three';
-// import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-// import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 // import Stats from 'three/examples/jsm/libs/stats.module'
 // import { GUI } from 'dat.gui'
 
@@ -14,6 +15,8 @@ var crate, crateTexture, crateNormalMap, crateBumpMap;
 var keyboard = {};
 var player = { height:1.8, speed:0.2, turnSpeed:Math.PI*0.02 };
 var USE_WIREFRAME = false;
+
+var raycaster, mouse;
 
 var loadingScreen = {
 	scene: new THREE.Scene(),
@@ -48,16 +51,25 @@ var RESOURCES_LOADED = false;
 
 var models = {
 	B3: {
-		glb:"ThreeJS/models/gltf/B3-230223.glb",
-		model_mesh: null
+		glb:"banana-pie.glb",
+		model_mesh: null,
+		dimensions_x : 0,
+		dimensions_y : 0,
+		dimensions_z : 0
 	},
 	B5: {
-		glb:"ThreeJS/models/gltf/B5.glb",
-		model_mesh: null
+		glb:"blue-dream.glb",
+		model_mesh: null,
+		dimensions_x : 30,
+		dimensions_y : 0,
+		dimensions_z : 0
 	},
 	B6: {
-		glb:"ThreeJS/models/gltf/B6.glb",
-		model_mesh: null
+		glb:"bubble-gum.glb",
+		model_mesh: null,
+		dimensions_x : -30,
+		dimensions_y : 0,
+		dimensions_z : 0
 	}
 };
 
@@ -86,10 +98,16 @@ function init(){
 	scene = new THREE.Scene();
 	camera = new THREE.PerspectiveCamera(90, 1280/720, 0.1, 1000);
 	
+	const gridHelper = new THREE.GridHelper(250, 20);
+	scene.add(gridHelper);
+
 	const axesHelper = new THREE.AxesHelper( 50 );
 	scene.add( axesHelper );
 	
-	loadingScreen.box.position.set(0,0,5);
+	raycaster = new THREE.Raycaster();
+  	mouse = new THREE.Vector2()
+
+	loadingScreen.box.position.set(0,0,0);
 	loadingScreen.camera.lookAt(loadingScreen.box.position);
 	loadingScreen.scene.add(loadingScreen.box);
 	
@@ -104,29 +122,48 @@ function init(){
 		onResourcesLoaded();
 	};
 	
+	// const labelRenderer = new CSS2DRenderer();
+	// labelRenderer.setSize(window.innerWidth, window.innerHeight);
+	// labelRenderer.domElement.style.position = 'absolute';
+	// labelRenderer.domElement.style.top = "0px";
+	// labelRenderer.domElement.body.appendChild(labelRenderer.domElement);
 	
-	mesh = new THREE.Mesh(
-		new THREE.BoxGeometry(1,1,1),
-		new THREE.MeshPhongMaterial({color:0xff4444, wireframe:USE_WIREFRAME})
-	);
-	mesh.position.y += 1;
-	mesh.receiveShadow = true;
-	mesh.castShadow = true;
-	scene.add(mesh);
+	// var background = makeElementObject('div', 200, 200)
+    // background.css3dObject.element.textContent = "How can we make the Sphere show behind this surface?"
+    // background.css3dObject.element.setAttribute('contenteditable', '')    
+    // background.position.z = 20
+    // background.css3dObject.element.style.opacity = "0.65"
+    // root.add( background );
+    
+    // const button = makeElementObject('button', 75, 20)    
+    // button.css3dObject.element.style.border = '1px solid orange'
+    // button.css3dObject.element.textContent = "Click me!"
+    // button.css3dObject.element.addEventListener('click', () => alert('Button clicked!'))
+    // button.position.y = 10
+    // button.position.z = 10
+    // background.add(button)
+
+	var p = document.createElement('h1');
+	p.className ="pointer3d";
+	p.textContent = "TEXT -------------------- ---------------SHOWING";
+	// p.append("TEXT -------------------- ---------------SHOWING");
+	const cPointLabel = new CSS2DObject(p);
+	scene.add(cPointLabel);
+	cPointLabel.position.set(10,10,10);
+
+	// mesh = new THREE.Mesh(
+	// 	new THREE.BoxGeometry(1,1,1),
+	// 	new THREE.MeshPhongMaterial({color:0xff4444, wireframe:USE_WIREFRAME})
+	// );
+	// mesh.position.y += 1;
+	// mesh.receiveShadow = true;
+	// mesh.castShadow = true;
+	// scene.add(mesh);
 	
 	let size = 8000;
-	// const environmentTexture = new THREE.CubeTextureLoader().load(CubeTexture)
-	// scene.background = environmentTexture;
 	setUpGround(size);
-	// meshFloor = new THREE.Mesh(
-	// 	new THREE.PlaneGeometry(20,20, 10,10),
-	// 	new THREE.MeshPhongMaterial({color:0xffffff, wireframe:USE_WIREFRAME})
-	// );
-	// meshFloor.rotation.x -= Math.PI / 2;
-	// meshFloor.receiveShadow = true;
-	// scene.add(meshFloor);
 	
-	ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+	ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
 	scene.add(ambientLight);
 	
 	light = new THREE.PointLight(0xffffff, 0.8, 18);
@@ -142,12 +179,12 @@ function init(){
 
 	const gui = new dat.GUI();
 	const cubeFolder = gui.addFolder('Cube')
-		cubeFolder.add(mesh.rotation, 'x', 0, Math.PI * 2)
-		cubeFolder.add(mesh.rotation, 'y', 0, Math.PI * 2)
-		cubeFolder.add(mesh.rotation, 'z', 0, Math.PI * 2)
-		cubeFolder.open()
+		// cubeFolder.add(mesh.rotation, 'x', 0, Math.PI * 2)
+		// cubeFolder.add(mesh.rotation, 'y', 0, Math.PI * 2)
+		// cubeFolder.add(mesh.rotation, 'z', 0, Math.PI * 2)
+		// cubeFolder.open()
 		const cameraFolder = gui.addFolder('Camera')
-		cameraFolder.add(camera.position, 'z', -10, 10)
+		cameraFolder.add(camera.position, 'z', -100, 100)
 		cameraFolder.open()
 
 	var textureLoader = new THREE.TextureLoader(loadingManager);
@@ -155,102 +192,81 @@ function init(){
 	crateBumpMap = textureLoader.load("ThreeJS/textures/crate/crate0_bump.jpg");
 	crateNormalMap = textureLoader.load("ThreeJS/textures/crate/crate0_normal.jpg");
 	
-	crate = new THREE.Mesh(
-		new THREE.BoxGeometry(3,3,3),
-		new THREE.MeshPhongMaterial({
-			color:0xffffff,
-			map:crateTexture,
-			bumpMap:crateBumpMap,
-			normalMap:crateNormalMap
-		})
-	);
-	scene.add(crate);
-	crate.position.set(2.5, 3/2, 2.5);
-	crate.receiveShadow = true;
-	crate.castShadow = true;
+	// crate = new THREE.Mesh(
+	// 	new THREE.BoxGeometry(3,3,3),
+	// 	new THREE.MeshPhongMaterial({
+	// 		color:0xffffff,
+	// 		map:crateTexture,
+	// 		bumpMap:crateBumpMap,
+	// 		normalMap:crateNormalMap
+	// 	})
+	// );
+	// scene.add(crate);
+	// crate.position.set(2.5, 3/2, 2.5);
+	// crate.receiveShadow = true;
+	// crate.castShadow = true;
 	
 	// Load models
-	// REMEMBER: Loading in Javascript is asynchronous, so you need
-	// to wrap the code in a function and pass it the index. If you
-	// don't, then the index '_key' can change while the model is being
-	// downloaded, and so the wrong model will be matched with the wrong
-	// index key.
+
+	// new RGBELoader()
+	// 	.setPath( 'ThreeJS/textures/equirectangular/' )
+	// 	.load( 'quarry_01_1k.hdr', function ( texture ) {
+			// background texture
+			// texture.mapping = THREE.EquirectangularReflectionMapping;
+			// scene.background = texture;
+			// scene.environment = texture;
+			// render();
+			// model
+			// const loader = new GLTFLoader().setPath( 'ThreeJS/models/gltf/' );
+			// loader.load( 'cotton-candy.glb', function ( gltf ) {
+			// 	gltf.scene.traverse(function (node) {
+			// 		if (node instanceof THREE.Mesh) {
+			// 			node.castShadow = true;
+			// 		}
+			// 	});
+			// 	gltf.scene.scale.set(0.04, 0.04, 0.04); 
+			// 	gltf.scene.position.set( 0 , 0, 0); 
+				
+			// 	scene.add( gltf.scene );
+			// 	animate();
+			// }, undefined, function ( error ) {
+			// 	console.log("Model Load Error");
+			// 	console.error( error );
+			// } ); 
+		// });
 
 	for( var _key in models ){
 		(function(key){
-			
-			// var glbLoader = new THREE.GLTFLoader();
-			const glbLoader = new GLTFLoader(loadingManager);
-			glbLoader.load(models[key].glb, function(gltf) {
-
-				mesh.traverse(function(node){
-					if(node instanceof THREE.Mesh){
+			console.log(models[key].glb);
+			const loader = new GLTFLoader().setPath( 'ThreeJS/models/gltf/' );
+			loader.load( models[key].glb, function ( gltf ) {
+				gltf.scene.traverse(function (node) {
+					if (node instanceof THREE.Mesh) {
 						node.castShadow = true;
-						node.receiveShadow = true;
-					}else{
-						node.layers.disableAll();
 					}
 				});
-				models[key].model_mesh = mesh;
-
-				// console.log("models",models);
-
-				// scene.add( gltf.scene );
-
-				// // materials.preload();
-				// mesh.traverse(function(node){
-				// 	if( node instanceof THREE.Mesh ){
-				// 		node.castShadow = true;
-				// 		node.receiveShadow = true;
-				// 	}
-				// });
-				// models[key].mesh = mesh;
-
-			// // get the root object from the loaded scene
-			// var model = gltf.scene;
-			// // add the model to the scene
-
-			// model.position.set(10, 10, 12);
-			// model.scale.set(2,2,2);
-			// scene.add(model);
-			// // render the scene
-			// renderer.render(scene, camera);
-			});
-
-
-
-			// var mtlLoader = new THREE.MTLLoader(loadingManager);
-			// mtlLoader.load(models[key].mtl, function(materials){
-			// 	materials.preload();
+				gltf.scene.scale.set(0.04, 0.04, 0.04); 
+				gltf.scene.position.set( models[key].dimensions_x , models[key].dimensions_y, models[key].dimensions_z); 
 				
-			// 	var objLoader = new THREE.OBJLoader(loadingManager);
-				
-			// 	objLoader.setMaterials(materials);
-			// 	objLoader.load(models[key].obj, function(mesh){
-					
-			// 		mesh.traverse(function(node){
-			// 			if( node instanceof THREE.Mesh ){
-			// 				node.castShadow = true;
-			// 				node.receiveShadow = true;
-			// 			}
-			// 		});
-			// 		models[key].mesh = mesh;
-					
-			// 	});
-			// });
-			
+				scene.add( gltf.scene );
+				animate();
+			}, undefined, function ( error ) {
+				console.log("Model Load Error");
+				console.error( error );
+			} ); 
 		})(_key);
 	}
-	
-	// const controls = new OrbitControls( camera, renderer.domElement );
-	// controls.addEventListener( 'change', render ); // use if there is no animation loop
-	// controls.minDistance = 1000;
-	// controls.maxDistance = 1200;
-	// // controls.target.set( 0, 0, 0 );
-	// // controls.enableZoom = false;
-	// // controlsPerspective.enablePan = false;
-	// // controlsPerspective.enableDamping = true;
-	// controls.update();
+
+	// for( var _key in models ){
+	// 	(function(key){
+	// 		const loader = new GLTFLoader().setPath( 'ThreeJS/models/gltf/' );
+	// 		loader.load( models[key].glb, function ( gltf ) {
+	// 			// gltf.scale.set(3,3,3);
+	// 			// gltf.position.set(10, 10, 10)
+	// 			scene.add( gltf.scene );
+	// 		});
+	// 	})(_key);
+	// }
 
 	camera.position.set(5, player.height, -12);
 	camera.lookAt(new THREE.Vector3(0,player.height,0));
@@ -260,7 +276,19 @@ function init(){
 
 	renderer.shadowMap.enabled = true;
 	renderer.shadowMap.type = THREE.BasicShadowMap;
-	
+
+
+
+	const controls = new OrbitControls( camera, renderer.domElement );
+	controls.maxPolarAngle = Math.PI*0.49;
+	// controls.addEventListener( 'change', animate ); // use if there is no animation loop
+	controls.minDistance = 0;
+	controls.maxDistance = 100;
+	controls.target.set( 0, 5, 0);
+	controls.update();
+
+	renderer.domElement.addEventListener('click', onClick, false);
+
 	document.body.appendChild(renderer.domElement);
 	
 	window.addEventListener( 'resize', onWindowResize );
@@ -276,26 +304,45 @@ function onWindowResize() {
 
 // Runs when all resources are loaded
 function onResourcesLoaded(){
-	// Clone models into meshes.
-	meshes["B3"] = models.B3.model_mesh.clone();
-	meshes["B5"] = models.B5.model_mesh.clone();
-	meshes["B6"] = models.B6.model_mesh.clone();
+	// // Clone models into meshes.
+	// meshes["B3"] = models.B3.model_mesh.clone();
+	// meshes["B5"] = models.B5.model_mesh.clone();
+	// meshes["B6"] = models.B6.model_mesh.clone();
 	
-	// Reposition individual meshes, then add meshes to scene
-	meshes["B3"].position.set(4, 4, 4);
-	meshes["B3"].scale.set(3,3,3);
+	// // Reposition individual meshes, then add meshes to scene
+	// meshes["B3"].position.set(4, 4, 4);
+	// meshes["B3"].scale.set(3,3,3);
 	
-	console.log("Meshes :: ", meshes["B3"]);
+	// console.log("Meshes :: ", meshes["B3"]);
 	
-	scene.add(meshes["B3"]);
+	// scene.add(meshes["B3"]);
 	
-	meshes["B5"].position.set(-8, 0, 4);
-	meshes["B5"].position.y = + 5;
-	scene.add(meshes["B5"]);
+	// meshes["B5"].position.set(-8, 0, 4);
+	// meshes["B5"].position.y = + 5;
+	// scene.add(meshes["B5"]);
 	
-	meshes["B6"].position.set(-5, 0, 1);
-	meshes["B6"].position.y = + 5;	
-	scene.add(meshes["B6"]);
+	// meshes["B6"].position.set(-5, 0, 1);
+	// meshes["B6"].position.y = + 5;	
+	// scene.add(meshes["B6"]);
+}
+
+function onClick() {
+
+  event.preventDefault();
+
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+
+  var intersects = raycaster.intersectObjects(scene.children, true);
+
+  if (intersects.length > 0) {
+
+    console.log('Intersection:', intersects[0]);
+
+  }
+
 }
 
 function animate(){
@@ -307,16 +354,16 @@ function animate(){
 		loadingScreen.box.position.x -= 0.05;
 		if( loadingScreen.box.position.x < -10 ) loadingScreen.box.position.x = 10;
 		loadingScreen.box.position.y = Math.sin(loadingScreen.box.position.x);
-		
+
 		renderer.render(loadingScreen.scene, loadingScreen.camera);
 		return;
 	}
 
 	requestAnimationFrame(animate);
 	
-	mesh.rotation.x += 0.01;
-	mesh.rotation.y += 0.02;
-	crate.rotation.y += 0.01;
+	// mesh.rotation.x += 0.01;
+	// mesh.rotation.y += 0.02;
+	// crate.rotation.y += 0.01;
 	// Uncomment for absurdity!
 	// meshes["pirateship"].rotation.z += 0.01;
 	

@@ -18,12 +18,12 @@
 	function init() {
 
 		const container = document.createElement( 'div' );
-		document.getElementById("3denv").appendChild( container );
+		document.getElementById("denv").appendChild( container );
 		
 		const fov    = 100; 		// Camera frustum vertical field of view
 		const aspect = (window.innerWidth) / (window.innerHeight); // came 2d width height
-		const near   =  0.9;    // Camera frustum  near plane
-		const far    = 2000;	 // Camera frustum  far plane
+		const near   =  1;    // Camera frustum  near plane
+		const far    = 8000;	 // Camera frustum  far plane
 		
 		camera = new THREE.PerspectiveCamera( fov, aspect, near, far );
 		camera.position.set( -50, 100, 100 );  // x, y, and 3rd = height 
@@ -31,35 +31,39 @@
 
 		scene = new THREE.Scene();
 
-		new RGBELoader()
-			.setPath( 'ThreeJS/textures/equirectangular/' )
-			.load( 'quarry_01_1k.hdr', function ( texture ) {
+		// new RGBELoader()
+		// 	.setPath( 'ThreeJS/textures/equirectangular/' )
+		// 	.load( 'quarry_01_1k.hdr', function ( texture ) {
 
-				// background texture
-				// texture.mapping = THREE.EquirectangularReflectionMapping;
+		// 		// background texture
+		// 		texture.mapping = THREE.EquirectangularReflectionMapping;
 
-				// scene.background = texture;
-				// scene.environment = texture;
+		// 		scene.background = texture;
+		// 		scene.environment = texture;
 
-				// render();
+		// 		render();
 
 				// model
 
-				const loader = new GLTFLoader().setPath( 'ThreeJS/models/gltf/4acemodel/' );
-				loader.load( 'Building-3-v1.gltf', function ( gltf ) {
+				const loader = new GLTFLoader().setPath( 'ThreeJS/models/gltf/' );
+				loader.load( 'cotton-candy.glb', function ( gltf ) {
 
+					gltf.scene.position.x = 0;
+					gltf.scene.position.y = 0;
+					gltf.scene.position.z = 0;
+					gltf.scene.scale.set(0.1, 0.1, 0.1);
 					scene.add( gltf.scene );
 
 					render();
 
 				} );
 
-			} );
+			// } );
 
 		renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
 		renderer.setClearColor( 0x000000, 0 ); //make background transparent
 		renderer.setPixelRatio( window.devicePixelRatio ); //Sets device pixel ratio, used for HiDPI device to prevent blurring output canvas.
-		renderer.setSize( window.innerWidth/2, window.innerHeight/2 ); //( width : Integer, height : Integer, updateStyle : Boolean ), Resizes the output canvas to (width, height) with device pixel ratio
+		renderer.setSize( window.innerWidth, window.innerHeight ); //( width : Integer, height : Integer, updateStyle : Boolean ), Resizes the output canvas to (width, height) with device pixel ratio
 		renderer.toneMapping = THREE.ACESFilmicToneMapping;
 		renderer.toneMappingExposure = 1;
 		renderer.outputEncoding = THREE.sRGBEncoding;
@@ -76,19 +80,19 @@
 	var hlight = new THREE.AmbientLight (0xffffff,2.8);
 	scene.add(hlight);
 
-	var directionalLight = new THREE.DirectionalLight(0xffffff,0.8);
-	directionalLight.position.set(300,100, 100);
-	directionalLight.castShadow = true;
-	scene.add(directionalLight);
+	// var directionalLight = new THREE.DirectionalLight(0xffffff,0.8);
+	// directionalLight.position.set(300,100, 100);
+	// directionalLight.castShadow = true;
+	// scene.add(directionalLight);
 
-	directionalLight.shadow.mapSize.width = 0;
-	directionalLight.shadow.mapSize.height = 0; 
-	directionalLight.shadow.camera.near = 1; 
-	directionalLight.shadow.camera.far = 200;
-	directionalLight.shadow.camera.left = 50;
-	directionalLight.shadow.camera.right = 50;
-	directionalLight.shadow.camera.top = 50;
-	directionalLight.shadow.camera.bottom = 50;
+	// directionalLight.shadow.mapSize.width = 0;
+	// directionalLight.shadow.mapSize.height = 0; 
+	// directionalLight.shadow.camera.near = 1; 
+	// directionalLight.shadow.camera.far = 200;
+	// directionalLight.shadow.camera.left = 50;
+	// directionalLight.shadow.camera.right = 50;
+	// directionalLight.shadow.camera.top = 50;
+	// directionalLight.shadow.camera.bottom = 50;
 // self end
 		window.addEventListener( 'resize', onWindowResize );
 
@@ -96,10 +100,10 @@
 
 	function onWindowResize() {
 
-		camera.aspect = (window.innerWidth/2) / (window.innerHeight/2);
+		camera.aspect = (window.innerWidth) / (window.innerHeight);
 		camera.updateProjectionMatrix();
 
-		renderer.setSize( (window.innerWidth/2),( window.innerHeight/2) );
+		renderer.setSize( (window.innerWidth),( window.innerHeight) );
 
 		render();
 

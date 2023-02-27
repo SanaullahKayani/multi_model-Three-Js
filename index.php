@@ -15,6 +15,7 @@
 </head>
 
 <body>
+    <div id="denv"> </div>
     <!-- <div id="dubai_environment"></div> -->
     <script type="text/javascript" src="lib/dat.gui.js"></script>
 

@@ -15,7 +15,12 @@
 </head>
 
 <body>
-    <div id="denv"> </div>
+    <!-- <div id="denv">
+        <h3>POINTER HERE</h3>
+    </div>
+    <div id="scn">
+        <h3>OKAy</h3>
+    </div> -->
     <!-- <div id="dubai_environment"></div> -->
     <script type="text/javascript" src="lib/dat.gui.js"></script>
 
@@ -27,6 +32,7 @@
             }
         }
     </script>
+    <script type="module" src="ThreeJS/three_mmi.js"></script>
     <script type="module" src="ThreeJS/metaverse.js"></script>
 </body>
 

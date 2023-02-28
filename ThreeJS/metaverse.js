@@ -1,9 +1,13 @@
 
 import * as THREE from 'three';
+import MouseMeshInteraction from './three_mmi.js';
+
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+// import { Interaction } from '../node_modules/three.interaction';
 // import Stats from 'three/examples/jsm/libs/stats.module'
 // import { GUI } from 'dat.gui'
 
@@ -50,24 +54,52 @@ var RESOURCES_LOADED = false;
 // };
 
 var models = {
-	B3: {
-		glb:"banana-pie.glb",
+	B1: {
+		glb:"building_1.glb",
 		model_mesh: null,
 		dimensions_x : 0,
 		dimensions_y : 0,
 		dimensions_z : 0
 	},
-	B5: {
-		glb:"blue-dream.glb",
+	B2: {
+		glb:"building_2.glb",
 		model_mesh: null,
 		dimensions_x : 30,
 		dimensions_y : 0,
 		dimensions_z : 0
 	},
-	B6: {
-		glb:"bubble-gum.glb",
+	B3: {
+		glb:"building_3.glb",
 		model_mesh: null,
 		dimensions_x : -30,
+		dimensions_y : 0,
+		dimensions_z : -60
+	},
+	B4: {
+		glb:"building_4.glb",
+		model_mesh: null,
+		dimensions_x : 190,
+		dimensions_y : 0,
+		dimensions_z : -40
+	},
+	B5: {
+		glb:"building_5.glb",
+		model_mesh: null,
+		dimensions_x : 100,
+		dimensions_y : 0,
+		dimensions_z : 50
+	},
+	B6: {
+		glb:"building_6.glb",
+		model_mesh: null,
+		dimensions_x : -90,
+		dimensions_y : 0,
+		dimensions_z : 20
+	},
+	RCBuildingShowcase: {
+		glb:"RCBuildingShowcase.glb",
+		model_mesh: null,
+		dimensions_x : 0,
 		dimensions_y : 0,
 		dimensions_z : 0
 	}
@@ -75,7 +107,8 @@ var models = {
 
 //Set Up Ground Environment
 function setUpGround(size){
-	const ground_texture = new THREE.TextureLoader().load('ThreeJS/textures/crate/crate0_diffuse.jpg' );
+	const ground_texture = new THREE.TextureLoader().load('ThreeJS/textures/crate/ground.jpg' );
+	// const ground_texture = new THREE.TextureLoader().load('ThreeJS/textures/crate/background2.jpg' );
 	ground_texture.wrapS = THREE.RepeatWrapping;
 	ground_texture.wrapT = THREE.RepeatWrapping;
 	let tSize = size*0.01;
@@ -121,7 +154,71 @@ function init(){
 		RESOURCES_LOADED = true;
 		onResourcesLoaded();
 	};
+
+
+	// var deer = document.getElementById("denv");
+	// var scn = document.querySelector("#scn");
+	// deer.addEventListener('mouseenter', function(event) {
+	// 	var text = document.createElement("a-entity");
+	// 	text.setAttribute("id","resume-text");
+	// 	text.setAttribute("text","text: resume");
+	// 	text.setAttribute("position","-25 15 -15");
+	// 	text.setAttribute("rotation","0 45 0");
+	// 	text.setAttribute("scale","4 4 4");
+	// 	scn.appendChild(text);
+	// 	text.addEventListener('click', function(event) {
+	// 		window.location.href = "/resume";
+	// 	});
+	// });
+
+	var loader = new THREE.CubeTextureLoader();
+	loader.setPath( 'ThreeJS/textures/crate/' );
+	var textureCube = loader.load( [
+		'starmap_4k.jpg', 'starmap_4k.jpg',
+		'ground.jpg', 'ground.jpg',
+		'StarNightHDRI.jpeg', 'StarNightHDRI.jpeg'
+	] );
+	var skyboxShader = THREE.ShaderLib[ "cube" ];
+	skyboxShader.uniforms[ "tCube" ].value = textureCube;
+
+	var skyboxMaterial = new THREE.ShaderMaterial( {
+		fragmentShader: skyboxShader.fragmentShader,
+		vertexShader: skyboxShader.vertexShader,
+		uniforms: skyboxShader.uniforms,
+		depthWrite: false,
+		side: THREE.BackSide
+	} );
+	var skyboxGeometry = new THREE.BoxGeometry( 10000, 10000, 10000 );
+	var skybox = new THREE.Mesh( skyboxGeometry, skyboxMaterial );
+	scene.add( skybox );
+
+	// create a mesh with a geometry and material
+	// var geometry = new THREE.BoxGeometry(5, 5, 5);
+	// var material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+	// var mesh = new THREE.Mesh(geometry, material);
+	// mesh.name = 'pointermesh';
+	// mesh.position.set(40, 40, 40);
+	// // add the mesh to the scene
+	// scene.add(mesh);
+
+	// const mmi = new MouseMeshInteraction(scene, camera);
+	// // add a handler on mouse click for mesh (or meshes) with the name 'bulb'
+	// mmi.addHandler('pointermesh', 'click', function(mesh) {
+	// 	alert('pointermesh is being clicked!');
+	// 	// switch between colors
+	// });
 	
+	// const buttonTexture = new THREE.TextureLoader().load( 'ThreeJS/textures/crate/background2.jpg' );
+	// const buttonMaterial = new THREE.SpriteMaterial( { map: buttonTexture } );
+	// const buttonSprite = new THREE.Sprite( buttonMaterial );
+	// buttonSprite.scale.set( 2, 2, 2 );
+	// buttonSprite.position.set( 0, 34, 0 );
+	// scene.add( buttonSprite );
+
+	// buttonSprite.addEventListener('click', function() {
+	// 	alert('Mesh clicked!');
+	// });
+
 	// const labelRenderer = new CSS2DRenderer();
 	// labelRenderer.setSize(window.innerWidth, window.innerHeight);
 	// labelRenderer.domElement.style.position = 'absolute';
@@ -143,13 +240,13 @@ function init(){
     // button.position.z = 10
     // background.add(button)
 
-	var p = document.createElement('h1');
-	p.className ="pointer3d";
-	p.textContent = "TEXT -------------------- ---------------SHOWING";
-	// p.append("TEXT -------------------- ---------------SHOWING");
-	const cPointLabel = new CSS2DObject(p);
-	scene.add(cPointLabel);
-	cPointLabel.position.set(10,10,10);
+	// var p = document.createElement('h1');
+	// p.className ="pointer3d";
+	// p.textContent = "TEXT -------------------- ---------------SHOWING";
+	// // p.append("TEXT -------------------- ---------------SHOWING");
+	// const cPointLabel = new CSS2DObject(p);
+	// scene.add(cPointLabel);
+	// cPointLabel.position.set(10,10,10);
 
 	// mesh = new THREE.Mesh(
 	// 	new THREE.BoxGeometry(1,1,1),
@@ -183,9 +280,11 @@ function init(){
 		// cubeFolder.add(mesh.rotation, 'y', 0, Math.PI * 2)
 		// cubeFolder.add(mesh.rotation, 'z', 0, Math.PI * 2)
 		// cubeFolder.open()
-		const cameraFolder = gui.addFolder('Camera')
-		cameraFolder.add(camera.position, 'z', -100, 100)
-		cameraFolder.open()
+	const cameraFolder = gui.addFolder('Camera')
+	cameraFolder.add(camera.position, 'z', -100, 100)
+	cameraFolder.add(camera.position, 'x', -100, 100)
+	cameraFolder.add(camera.position, 'y', -100, 100)
+	cameraFolder.open()
 
 	var textureLoader = new THREE.TextureLoader(loadingManager);
 	crateTexture = textureLoader.load("ThreeJS/textures/crate/crate0_diffuse.jpg");
@@ -235,27 +334,7 @@ function init(){
 			// } ); 
 		// });
 
-	for( var _key in models ){
-		(function(key){
-			console.log(models[key].glb);
-			const loader = new GLTFLoader().setPath( 'ThreeJS/models/gltf/' );
-			loader.load( models[key].glb, function ( gltf ) {
-				gltf.scene.traverse(function (node) {
-					if (node instanceof THREE.Mesh) {
-						node.castShadow = true;
-					}
-				});
-				gltf.scene.scale.set(0.04, 0.04, 0.04); 
-				gltf.scene.position.set( models[key].dimensions_x , models[key].dimensions_y, models[key].dimensions_z); 
-				
-				scene.add( gltf.scene );
-				animate();
-			}, undefined, function ( error ) {
-				console.log("Model Load Error");
-				console.error( error );
-			} ); 
-		})(_key);
-	}
+	
 
 	// for( var _key in models ){
 	// 	(function(key){
@@ -268,7 +347,7 @@ function init(){
 	// 	})(_key);
 	// }
 
-	camera.position.set(5, player.height, -12);
+	camera.position.set(50, player.height, -35);
 	camera.lookAt(new THREE.Vector3(0,player.height,0));
 	
 	renderer = new THREE.WebGLRenderer();
@@ -304,6 +383,27 @@ function onWindowResize() {
 
 // Runs when all resources are loaded
 function onResourcesLoaded(){
+	for( var _key in models ){
+		(function(key){
+			console.log(models[key].glb);
+			const loader = new GLTFLoader().setPath( 'ThreeJS/models/gltf/' );
+			loader.load( models[key].glb, function ( gltf ) {
+				gltf.scene.traverse(function (node) {
+					if (node instanceof THREE.Mesh) {
+						node.castShadow = true;
+					}
+				});
+				gltf.scene.scale.set(3, 3 , 3); 
+				gltf.scene.position.set( models[key].dimensions_x , models[key].dimensions_y, models[key].dimensions_z); 
+				
+				scene.add( gltf.scene );
+				animate();
+			}, undefined, function ( error ) {
+				console.log("Model Load Error");
+				console.error( error );
+			} ); 
+		})(_key);
+	}
 	// // Clone models into meshes.
 	// meshes["B3"] = models.B3.model_mesh.clone();
 	// meshes["B5"] = models.B5.model_mesh.clone();
@@ -339,7 +439,9 @@ function onClick() {
 
   if (intersects.length > 0) {
 
-    console.log('Intersection:', intersects[0]);
+	var clickedObject = intersects[0].object;
+    console.log('Intersection:=>', intersects[0]);
+    console.log('clickedObject :=>', clickedObject);
 
   }
 

@@ -2,5 +2,8 @@
   "devDependencies": {
     "@types/dat.gui": "^0.7.7",
     "dat.gui": "^0.7.9"
+  },
+  "dependencies": {
+    "three.interaction": "^0.2.3"
   }
 }

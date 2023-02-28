@@ -17,7 +17,7 @@ var meshFloor, ambientLight, light;
 var crate, crateTexture, crateNormalMap, crateBumpMap;
 
 var keyboard = {};
-var player = { height:1.8, speed:0.2, turnSpeed:Math.PI*0.02 };
+var player = { height:5.8, speed:0.2, turnSpeed:Math.PI*0.02 };
 var USE_WIREFRAME = false;
 
 var raycaster, mouse;
@@ -54,51 +54,16 @@ var RESOURCES_LOADED = false;
 // };
 
 var models = {
-	B1: {
-		glb:"building_1.glb",
+	B3: {
+		glb:"building_3.glb",
 		model_mesh: null,
 		dimensions_x : 0,
 		dimensions_y : 0,
 		dimensions_z : 0
 	},
-	B2: {
-		glb:"building_2.glb",
-		model_mesh: null,
-		dimensions_x : 30,
-		dimensions_y : 0,
-		dimensions_z : 0
-	},
-	B3: {
-		glb:"building_3.glb",
-		model_mesh: null,
-		dimensions_x : -30,
-		dimensions_y : 0,
-		dimensions_z : -60
-	},
-	B4: {
-		glb:"building_4.glb",
-		model_mesh: null,
-		dimensions_x : 190,
-		dimensions_y : 0,
-		dimensions_z : -40
-	},
-	B5: {
-		glb:"building_5.glb",
-		model_mesh: null,
-		dimensions_x : 100,
-		dimensions_y : 0,
-		dimensions_z : 50
-	},
-	B6: {
-		glb:"building_6.glb",
-		model_mesh: null,
-		dimensions_x : -90,
-		dimensions_y : 0,
-		dimensions_z : 20
-	},
 	RCBuildingShowcase: {
 		glb:"RCBuildingShowcase.glb",
-		model_mesh: null,
+		model_mesh: 'ground',
 		dimensions_x : 0,
 		dimensions_y : 0,
 		dimensions_z : 0
@@ -174,9 +139,9 @@ function init(){
 	var loader = new THREE.CubeTextureLoader();
 	loader.setPath( 'ThreeJS/textures/crate/' );
 	var textureCube = loader.load( [
-		'starmap_4k.jpg', 'starmap_4k.jpg',
-		'ground.jpg', 'ground.jpg',
-		'StarNightHDRI.jpeg', 'StarNightHDRI.jpeg'
+		'bluecloud_bk.jpg', 'bluecloud_dn.jpg',
+		'bluecloud_ft.jpg', 'bluecloud_lf.jpg',
+		'bluecloud_rt.jpg', 'bluecloud_up.jpg'
 	] );
 	var skyboxShader = THREE.ShaderLib[ "cube" ];
 	skyboxShader.uniforms[ "tCube" ].value = textureCube;
@@ -257,14 +222,14 @@ function init(){
 	// mesh.castShadow = true;
 	// scene.add(mesh);
 	
-	let size = 8000;
-	setUpGround(size);
+	// let size = 8000;
+	// setUpGround(size);
 	
-	ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+	ambientLight = new THREE.AmbientLight(0xffffff, 1);
 	scene.add(ambientLight);
-	
-	light = new THREE.PointLight(0xffffff, 0.8, 18);
-	light.position.set(-3,6,-3);
+
+	light = new THREE.PointLight(0xffffff,1, 18);
+	light.position.set(-20,40,-20);
 	light.castShadow = true;
 	light.shadow.camera.near = 0.1;
 	light.shadow.camera.far = 25;
@@ -393,7 +358,12 @@ function onResourcesLoaded(){
 						node.castShadow = true;
 					}
 				});
-				gltf.scene.scale.set(3, 3 , 3); 
+
+				if(models[key].model_mesh == null ){
+					gltf.scene.scale.set(8, 8 , 8); 
+				}else{
+					gltf.scene.scale.set(0.5, 0.5 , 0.5); 
+				}
 				gltf.scene.position.set( models[key].dimensions_x , models[key].dimensions_y, models[key].dimensions_z); 
 				
 				scene.add( gltf.scene );
@@ -404,26 +374,6 @@ function onResourcesLoaded(){
 			} ); 
 		})(_key);
 	}
-	// // Clone models into meshes.
-	// meshes["B3"] = models.B3.model_mesh.clone();
-	// meshes["B5"] = models.B5.model_mesh.clone();
-	// meshes["B6"] = models.B6.model_mesh.clone();
-	
-	// // Reposition individual meshes, then add meshes to scene
-	// meshes["B3"].position.set(4, 4, 4);
-	// meshes["B3"].scale.set(3,3,3);
-	
-	// console.log("Meshes :: ", meshes["B3"]);
-	
-	// scene.add(meshes["B3"]);
-	
-	// meshes["B5"].position.set(-8, 0, 4);
-	// meshes["B5"].position.y = + 5;
-	// scene.add(meshes["B5"]);
-	
-	// meshes["B6"].position.set(-5, 0, 1);
-	// meshes["B6"].position.y = + 5;	
-	// scene.add(meshes["B6"]);
 }
 
 function onClick() {

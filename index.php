@@ -32,8 +32,8 @@
             }
         }
     </script>
-    <script type="module" src="ThreeJS/three_mmi.js"></script>
-    <script type="module" src="ThreeJS/metaverse.js"></script>
+    <!-- <script type="module" src="ThreeJS/three_mmi.js"></script> -->
+    <script type="module" src="ThreeJS/building_scene.js"></script>
 </body>
 
 </html>

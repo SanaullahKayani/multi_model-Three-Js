@@ -4,6 +4,7 @@ import * as THREE from 'three';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+// import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 // import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 // import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
@@ -12,16 +13,16 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 // import { GUI } from 'dat.gui'
 
 var scene, camera, renderer, mesh;
-var meshFloor, ambientLight, light;
+var meshFloor, ambientLight, light, light2, light3;
 
 var crate, crateTexture, crateNormalMap, crateBumpMap;
-
+var character;
 var keyboard = {};
 var player = { height:5.8, speed:0.2, turnSpeed:Math.PI*0.02 };
 var USE_WIREFRAME = false;
 
 var raycaster, mouse;
-
+var skybox;
 var loadingScreen = {
 	scene: new THREE.Scene(),
 	// camera: new THREE.PerspectiveCamera(90, 1280/720, 0.1, 100),
@@ -33,41 +34,42 @@ var loadingScreen = {
 };
 var loadingManager = null;
 var RESOURCES_LOADED = false;
-
-// Models index
-// var models = {
-// 	tent: {
-// 		obj:"models/Tent_Poles_01.obj",
-// 		mtl:"models/Tent_Poles_01.mtl",
-// 		mesh: null
-// 	},
-// 	campfire: {
-// 		obj:"models/Campfire_01.obj",
-// 		mtl:"models/Campfire_01.mtl",
-// 		mesh: null
-// 	},
-// 	pirateship: {
-// 		obj:"models/Pirateship.obj",
-// 		mtl:"models/Pirateship.mtl",
-// 		mesh: null
-// 	}
-// };
+// Meshes index
+var meshes = {};
 
 var models = {
 	B3: {
 		glb:"building_3.glb",
+		// glb:"B5_fixed.glb",
 		model_mesh: null,
 		dimensions_x : 0,
-		dimensions_y : 0,
+		dimensions_y : 13,
 		dimensions_z : 0
-	},
+	}
+	,
 	RCBuildingShowcase: {
-		glb:"RCBuildingShowcase.glb",
+		glb:"RC_Building_Showcase_woL.glb",
 		model_mesh: 'ground',
 		dimensions_x : 0,
 		dimensions_y : 0,
 		dimensions_z : 0
 	}
+	,
+	soldier: {
+		glb:"soldier.glb",
+		model_mesh: null,
+		dimensions_x : 55,
+		dimensions_y : 1,
+		dimensions_z : 15
+	},
+	skybox: {
+		glb:"skybox2_meshShowcase.glb",
+		model_mesh: 'ground',
+		dimensions_x : 0,
+		dimensions_y : -10,
+		dimensions_z : 0
+	}
+	
 };
 
 //Set Up Ground Environment
@@ -87,14 +89,75 @@ function setUpGround(size){
 	ground_Mesh.rotateX(-Math.PI*0.5);
 	scene.add(ground_Mesh);
 } 
+function addLights(){
+	ambientLight = new THREE.AmbientLight(0xffffff, 1);
+	
+	light =  new THREE.DirectionalLight(0xffffff, 1);
+	light.position.set(10,135,10); 
+	
+	// light2 =  new THREE.DirectionalLight(0xffffff, 1);
+	// light2.position.set(-10,135,-10); 
 
-// Meshes index
-var meshes = {};
+	// light3 =  new THREE.DirectionalLight(0xffffff, 1);
+	// light3.position.set(20,40,20); 
 
+}
+function applySkybox(){
+
+	var loader = new THREE.CubeTextureLoader();
+	loader.setPath( 'ThreeJS/textures/crate/' );
+	var textureCube = loader.load( [
+		'bluecloud_lf.jpg', 'bluecloud_rt.jpg',
+		'bluecloud_dn.jpg', 'bluecloud_up.jpg',
+		'bluecloud_ft.jpg', 'bluecloud_bk.jpg'
+
+	] );
+
+	var skyboxShader = THREE.ShaderLib[ "cube" ];
+	skyboxShader.uniforms[ "tCube" ].value = textureCube;
+
+	var skyboxMaterial = new THREE.ShaderMaterial( {
+		fragmentShader: skyboxShader.fragmentShader,
+		vertexShader: skyboxShader.vertexShader,
+		uniforms: skyboxShader.uniforms,
+		depthWrite: false,
+		side: THREE.BackSide
+	} );
+	var skyboxGeometry = new THREE.BoxGeometry( 10000, 10000, 10000 );
+	skybox = new THREE.Mesh( skyboxGeometry, skyboxMaterial );
+}
+function characterMovementcontrol(){
+	// character movement
+	const geometry = new THREE.BoxGeometry(1, 1, 1);
+	const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+	 character = new THREE.Mesh(geometry, material);
+
+	// Set the initial position of the character
+	character.position.set(0, 0, 40);
+	document.addEventListener('keydown', (event) => {
+		switch (event.key) {
+		case 'ArrowUp':
+			character.translateZ(-1);
+			break;
+		case 'ArrowDown':
+			character.translateZ(1);
+			break;
+		case 'ArrowLeft':
+			character.rotateY(Math.PI / 4);
+			break;
+		case 'ArrowRight':
+			character.rotateY(-Math.PI / 4);
+			break;
+		}
+	});
+// character movement END
+}
 
 function init(){
 	scene = new THREE.Scene();
-	camera = new THREE.PerspectiveCamera(90, 1280/720, 0.1, 1000);
+	// camera = new THREE.PerspectiveCamera(90, 1280/720, 0.1, 1000);
+	camera = new THREE.PerspectiveCamera(90,(window.innerWidth) / (window.innerHeight), 0.1, 1000);
+	
 	
 	const gridHelper = new THREE.GridHelper(250, 20);
 	scene.add(gridHelper);
@@ -120,43 +183,13 @@ function init(){
 		onResourcesLoaded();
 	};
 
-
-	// var deer = document.getElementById("denv");
-	// var scn = document.querySelector("#scn");
-	// deer.addEventListener('mouseenter', function(event) {
-	// 	var text = document.createElement("a-entity");
-	// 	text.setAttribute("id","resume-text");
-	// 	text.setAttribute("text","text: resume");
-	// 	text.setAttribute("position","-25 15 -15");
-	// 	text.setAttribute("rotation","0 45 0");
-	// 	text.setAttribute("scale","4 4 4");
-	// 	scn.appendChild(text);
-	// 	text.addEventListener('click', function(event) {
-	// 		window.location.href = "/resume";
-	// 	});
-	// });
-
-	var loader = new THREE.CubeTextureLoader();
-	loader.setPath( 'ThreeJS/textures/crate/' );
-	var textureCube = loader.load( [
-		'bluecloud_bk.jpg', 'bluecloud_dn.jpg',
-		'bluecloud_ft.jpg', 'bluecloud_lf.jpg',
-		'bluecloud_rt.jpg', 'bluecloud_up.jpg'
-	] );
-	var skyboxShader = THREE.ShaderLib[ "cube" ];
-	skyboxShader.uniforms[ "tCube" ].value = textureCube;
-
-	var skyboxMaterial = new THREE.ShaderMaterial( {
-		fragmentShader: skyboxShader.fragmentShader,
-		vertexShader: skyboxShader.vertexShader,
-		uniforms: skyboxShader.uniforms,
-		depthWrite: false,
-		side: THREE.BackSide
-	} );
-	var skyboxGeometry = new THREE.BoxGeometry( 10000, 10000, 10000 );
-	var skybox = new THREE.Mesh( skyboxGeometry, skyboxMaterial );
+	
+	applySkybox();
 	scene.add( skybox );
 
+	// characterMovementcontrol();
+	// scene.add(character);
+	
 	// create a mesh with a geometry and material
 	// var geometry = new THREE.BoxGeometry(5, 5, 5);
 	// var material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
@@ -166,74 +199,16 @@ function init(){
 	// // add the mesh to the scene
 	// scene.add(mesh);
 
-	// const mmi = new MouseMeshInteraction(scene, camera);
-	// // add a handler on mouse click for mesh (or meshes) with the name 'bulb'
-	// mmi.addHandler('pointermesh', 'click', function(mesh) {
-	// 	alert('pointermesh is being clicked!');
-	// 	// switch between colors
-	// });
-	
-	// const buttonTexture = new THREE.TextureLoader().load( 'ThreeJS/textures/crate/background2.jpg' );
-	// const buttonMaterial = new THREE.SpriteMaterial( { map: buttonTexture } );
-	// const buttonSprite = new THREE.Sprite( buttonMaterial );
-	// buttonSprite.scale.set( 2, 2, 2 );
-	// buttonSprite.position.set( 0, 34, 0 );
-	// scene.add( buttonSprite );
 
-	// buttonSprite.addEventListener('click', function() {
-	// 	alert('Mesh clicked!');
-	// });
-
-	// const labelRenderer = new CSS2DRenderer();
-	// labelRenderer.setSize(window.innerWidth, window.innerHeight);
-	// labelRenderer.domElement.style.position = 'absolute';
-	// labelRenderer.domElement.style.top = "0px";
-	// labelRenderer.domElement.body.appendChild(labelRenderer.domElement);
-	
-	// var background = makeElementObject('div', 200, 200)
-    // background.css3dObject.element.textContent = "How can we make the Sphere show behind this surface?"
-    // background.css3dObject.element.setAttribute('contenteditable', '')    
-    // background.position.z = 20
-    // background.css3dObject.element.style.opacity = "0.65"
-    // root.add( background );
-    
-    // const button = makeElementObject('button', 75, 20)    
-    // button.css3dObject.element.style.border = '1px solid orange'
-    // button.css3dObject.element.textContent = "Click me!"
-    // button.css3dObject.element.addEventListener('click', () => alert('Button clicked!'))
-    // button.position.y = 10
-    // button.position.z = 10
-    // background.add(button)
-
-	// var p = document.createElement('h1');
-	// p.className ="pointer3d";
-	// p.textContent = "TEXT -------------------- ---------------SHOWING";
-	// // p.append("TEXT -------------------- ---------------SHOWING");
-	// const cPointLabel = new CSS2DObject(p);
-	// scene.add(cPointLabel);
-	// cPointLabel.position.set(10,10,10);
-
-	// mesh = new THREE.Mesh(
-	// 	new THREE.BoxGeometry(1,1,1),
-	// 	new THREE.MeshPhongMaterial({color:0xff4444, wireframe:USE_WIREFRAME})
-	// );
-	// mesh.position.y += 1;
-	// mesh.receiveShadow = true;
-	// mesh.castShadow = true;
-	// scene.add(mesh);
-	
 	// let size = 8000;
 	// setUpGround(size);
 	
-	ambientLight = new THREE.AmbientLight(0xffffff, 1);
+	addLights();
 	scene.add(ambientLight);
-
-	light = new THREE.PointLight(0xffffff,1, 18);
-	light.position.set(-20,40,-20);
-	light.castShadow = true;
-	light.shadow.camera.near = 0.1;
-	light.shadow.camera.far = 25;
 	scene.add(light);
+	// scene.add(light2);
+	// scene.add(light3);
+	
 	
 	const sphereSize = 1;
 	const pointLightHelper = new THREE.PointLightHelper( light, sphereSize );
@@ -255,64 +230,8 @@ function init(){
 	crateTexture = textureLoader.load("ThreeJS/textures/crate/crate0_diffuse.jpg");
 	crateBumpMap = textureLoader.load("ThreeJS/textures/crate/crate0_bump.jpg");
 	crateNormalMap = textureLoader.load("ThreeJS/textures/crate/crate0_normal.jpg");
-	
-	// crate = new THREE.Mesh(
-	// 	new THREE.BoxGeometry(3,3,3),
-	// 	new THREE.MeshPhongMaterial({
-	// 		color:0xffffff,
-	// 		map:crateTexture,
-	// 		bumpMap:crateBumpMap,
-	// 		normalMap:crateNormalMap
-	// 	})
-	// );
-	// scene.add(crate);
-	// crate.position.set(2.5, 3/2, 2.5);
-	// crate.receiveShadow = true;
-	// crate.castShadow = true;
-	
-	// Load models
 
-	// new RGBELoader()
-	// 	.setPath( 'ThreeJS/textures/equirectangular/' )
-	// 	.load( 'quarry_01_1k.hdr', function ( texture ) {
-			// background texture
-			// texture.mapping = THREE.EquirectangularReflectionMapping;
-			// scene.background = texture;
-			// scene.environment = texture;
-			// render();
-			// model
-			// const loader = new GLTFLoader().setPath( 'ThreeJS/models/gltf/' );
-			// loader.load( 'cotton-candy.glb', function ( gltf ) {
-			// 	gltf.scene.traverse(function (node) {
-			// 		if (node instanceof THREE.Mesh) {
-			// 			node.castShadow = true;
-			// 		}
-			// 	});
-			// 	gltf.scene.scale.set(0.04, 0.04, 0.04); 
-			// 	gltf.scene.position.set( 0 , 0, 0); 
-				
-			// 	scene.add( gltf.scene );
-			// 	animate();
-			// }, undefined, function ( error ) {
-			// 	console.log("Model Load Error");
-			// 	console.error( error );
-			// } ); 
-		// });
-
-	
-
-	// for( var _key in models ){
-	// 	(function(key){
-	// 		const loader = new GLTFLoader().setPath( 'ThreeJS/models/gltf/' );
-	// 		loader.load( models[key].glb, function ( gltf ) {
-	// 			// gltf.scale.set(3,3,3);
-	// 			// gltf.position.set(10, 10, 10)
-	// 			scene.add( gltf.scene );
-	// 		});
-	// 	})(_key);
-	// }
-
-	camera.position.set(50, player.height, -35);
+	camera.position.set(70, player.height, 0);
 	camera.lookAt(new THREE.Vector3(0,player.height,0));
 	
 	renderer = new THREE.WebGLRenderer();
@@ -327,7 +246,7 @@ function init(){
 	controls.maxPolarAngle = Math.PI*0.49;
 	// controls.addEventListener( 'change', animate ); // use if there is no animation loop
 	controls.minDistance = 0;
-	controls.maxDistance = 100;
+	controls.maxDistance = 500;
 	controls.target.set( 0, 5, 0);
 	controls.update();
 
@@ -360,9 +279,9 @@ function onResourcesLoaded(){
 				});
 
 				if(models[key].model_mesh == null ){
-					gltf.scene.scale.set(8, 8 , 8); 
+					gltf.scene.scale.set(8, 8 , 8);
 				}else{
-					gltf.scene.scale.set(0.5, 0.5 , 0.5); 
+					gltf.scene.scale.set(1, 1 , 1); 
 				}
 				gltf.scene.position.set( models[key].dimensions_x , models[key].dimensions_y, models[key].dimensions_z); 
 				
@@ -443,6 +362,13 @@ function animate(){
 		camera.rotation.y += player.turnSpeed;
 	}
 	
+	// camera.position.set(
+	// 	character.position.x,
+	// 	character.position.y + 1,
+	// 	character.position.z + 5
+	//   );
+	//   camera.lookAt(character.position);
+
 	renderer.render(scene, camera);
 }
 

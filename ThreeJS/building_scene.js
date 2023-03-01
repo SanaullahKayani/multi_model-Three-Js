@@ -20,7 +20,7 @@ var character;
 var keyboard = {};
 var player = { height:5.8, speed:0.2, turnSpeed:Math.PI*0.02 };
 var USE_WIREFRAME = false;
-
+var intersects;
 var raycaster, mouse;
 var skybox;
 var loadingScreen = {
@@ -36,14 +36,13 @@ var loadingManager = null;
 var RESOURCES_LOADED = false;
 // Meshes index
 var meshes = {};
-
 var models = {
 	B3: {
-		glb:"building_3.glb",
-		// glb:"B5_fixed.glb",
+		// glb:"building_3.glb",
+		glb:"B5-1435-010323.glb",
 		model_mesh: null,
 		dimensions_x : 0,
-		dimensions_y : 13,
+		dimensions_y : 0,
 		dimensions_z : 0
 	}
 	,
@@ -57,10 +56,10 @@ var models = {
 	,
 	soldier: {
 		glb:"soldier.glb",
-		model_mesh: null,
-		dimensions_x : 55,
-		dimensions_y : 1,
-		dimensions_z : 15
+		model_mesh: 'character',
+		dimensions_x : 0,
+		dimensions_y : 0,
+		dimensions_z : 45
 	},
 	skybox: {
 		glb:"skybox2_meshShowcase.glb",
@@ -71,6 +70,29 @@ var models = {
 	}
 	
 };
+
+const clock = new THREE.Clock();
+function updateCameraPosition() {
+	const time = clock.getElapsedTime();
+	const radius = 60;
+	const angle = time * 0.5; // 
+	// renderer.domElement.addEventListener('mousedown', function(event) {
+		camera.position.x = radius * Math.sin(angle);
+		camera.position.z = radius * Math.cos(angle);
+		camera.lookAt(scene.position);
+	// });
+	
+	// const elapsedTime = clock.getElapsedTime();
+	// const angle = elapsedTime * 0.5; // Change this value to adjust the rotation speed
+  
+	// // Calculate the new camera position based on the angle
+	// const x = Math.sin(angle) * 5;
+	// const z = Math.cos(angle) * 5;
+	// camera.position.set(x, 0, z);
+  
+	// // Point the camera towards the origin
+	// camera.lookAt(0, 10, 70);
+  }
 
 //Set Up Ground Environment
 function setUpGround(size){
@@ -93,7 +115,7 @@ function addLights(){
 	ambientLight = new THREE.AmbientLight(0xffffff, 1);
 	
 	light =  new THREE.DirectionalLight(0xffffff, 1);
-	light.position.set(10,135,10); 
+	light.position.set(10,75,10); 
 	
 	// light2 =  new THREE.DirectionalLight(0xffffff, 1);
 	// light2.position.set(-10,135,-10); 
@@ -102,30 +124,31 @@ function addLights(){
 	// light3.position.set(20,40,20); 
 
 }
-function applySkybox(){
+// function applySkybox(){
 
-	var loader = new THREE.CubeTextureLoader();
-	loader.setPath( 'ThreeJS/textures/crate/' );
-	var textureCube = loader.load( [
-		'bluecloud_lf.jpg', 'bluecloud_rt.jpg',
-		'bluecloud_dn.jpg', 'bluecloud_up.jpg',
-		'bluecloud_ft.jpg', 'bluecloud_bk.jpg'
+// 	var loader = new THREE.CubeTextureLoader();
+// 	loader.setPath( 'ThreeJS/textures/crate/' );
+// 	var textureCube = loader.load( [
+// 		'bluecloud_lf.jpg', 'bluecloud_rt.jpg',
+// 		'bluecloud_dn.jpg', 'bluecloud_up.jpg',
+// 		'bluecloud_ft.jpg', 'bluecloud_bk.jpg'
 
-	] );
+// 	] );
 
-	var skyboxShader = THREE.ShaderLib[ "cube" ];
-	skyboxShader.uniforms[ "tCube" ].value = textureCube;
+// 	var skyboxShader = THREE.ShaderLib[ "cube" ];
+// 	skyboxShader.uniforms[ "tCube" ].value = textureCube;
 
-	var skyboxMaterial = new THREE.ShaderMaterial( {
-		fragmentShader: skyboxShader.fragmentShader,
-		vertexShader: skyboxShader.vertexShader,
-		uniforms: skyboxShader.uniforms,
-		depthWrite: false,
-		side: THREE.BackSide
-	} );
-	var skyboxGeometry = new THREE.BoxGeometry( 10000, 10000, 10000 );
-	skybox = new THREE.Mesh( skyboxGeometry, skyboxMaterial );
-}
+// 	var skyboxMaterial = new THREE.ShaderMaterial( {
+// 		fragmentShader: skyboxShader.fragmentShader,
+// 		vertexShader: skyboxShader.vertexShader,
+// 		uniforms: skyboxShader.uniforms,
+// 		depthWrite: false,
+// 		side: THREE.BackSide
+// 	} );
+// 	var skyboxGeometry = new THREE.BoxGeometry( 10000, 10000, 10000 );
+// 	skybox = new THREE.Mesh( skyboxGeometry, skyboxMaterial );
+// }
+
 function characterMovementcontrol(){
 	// character movement
 	const geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -158,12 +181,11 @@ function init(){
 	// camera = new THREE.PerspectiveCamera(90, 1280/720, 0.1, 1000);
 	camera = new THREE.PerspectiveCamera(90,(window.innerWidth) / (window.innerHeight), 0.1, 1000);
 	
-	
-	const gridHelper = new THREE.GridHelper(250, 20);
-	scene.add(gridHelper);
+	// const gridHelper = new THREE.GridHelper(250, 20);
+	// scene.add(gridHelper);
 
-	const axesHelper = new THREE.AxesHelper( 200 );
-	scene.add( axesHelper );
+	// const axesHelper = new THREE.AxesHelper( 200 );
+	// scene.add( axesHelper );
 	
 	raycaster = new THREE.Raycaster();
   	mouse = new THREE.Vector2()
@@ -184,8 +206,8 @@ function init(){
 	};
 
 	
-	applySkybox();
-	scene.add( skybox );
+	// applySkybox();
+	// scene.add( skybox );
 
 	// characterMovementcontrol();
 	// scene.add(character);
@@ -210,28 +232,30 @@ function init(){
 	// scene.add(light3);
 	
 	
-	const sphereSize = 1;
-	const pointLightHelper = new THREE.PointLightHelper( light, sphereSize );
-	scene.add( pointLightHelper )
+	// const sphereSize = 1;
+	// const pointLightHelper = new THREE.PointLightHelper( light, sphereSize );
+	// scene.add( pointLightHelper )
 
-	const gui = new dat.GUI();
-	const cubeFolder = gui.addFolder('Cube')
-		// cubeFolder.add(mesh.rotation, 'x', 0, Math.PI * 2)
-		// cubeFolder.add(mesh.rotation, 'y', 0, Math.PI * 2)
-		// cubeFolder.add(mesh.rotation, 'z', 0, Math.PI * 2)
-		// cubeFolder.open()
-	const cameraFolder = gui.addFolder('Camera')
-	cameraFolder.add(camera.position, 'z', -100, 100)
-	cameraFolder.add(camera.position, 'x', -100, 100)
-	cameraFolder.add(camera.position, 'y', -100, 100)
-	cameraFolder.open()
+	// const gui = new dat.GUI();
+	// const cubeFolder = gui.addFolder('Cube')
+	// 	// cubeFolder.add(mesh.rotation, 'x', 0, Math.PI * 2)
+	// 	// cubeFolder.add(mesh.rotation, 'y', 0, Math.PI * 2)
+	// 	// cubeFolder.add(mesh.rotation, 'z', 0, Math.PI * 2)
+	// 	// cubeFolder.open()
+	// const cameraFolder = gui.addFolder('Camera')
+	// cameraFolder.add(camera.position, 'z', -100, 100)
+	// cameraFolder.add(camera.position, 'x', -100, 100)
+	// cameraFolder.add(camera.position, 'y', -100, 100)
+	// cameraFolder.open()
 
 	var textureLoader = new THREE.TextureLoader(loadingManager);
 	crateTexture = textureLoader.load("ThreeJS/textures/crate/crate0_diffuse.jpg");
 	crateBumpMap = textureLoader.load("ThreeJS/textures/crate/crate0_bump.jpg");
 	crateNormalMap = textureLoader.load("ThreeJS/textures/crate/crate0_normal.jpg");
 
-	camera.position.set(70, player.height, 0);
+	// camera.position.set(0, player.height, 62);
+	camera.position.set(0, 35, 80);
+	// camera.position.set(20, 100, 65);
 	camera.lookAt(new THREE.Vector3(0,player.height,0));
 	
 	renderer = new THREE.WebGLRenderer();
@@ -246,13 +270,14 @@ function init(){
 	controls.maxPolarAngle = Math.PI*0.49;
 	// controls.addEventListener( 'change', animate ); // use if there is no animation loop
 	controls.minDistance = 0;
-	controls.maxDistance = 500;
+	controls.maxDistance = 100;
 	controls.target.set( 0, 5, 0);
 	controls.update();
 
 	renderer.domElement.addEventListener('click', onClick, false);
 
-	document.body.appendChild(renderer.domElement);
+	// document.body.appendChild(renderer.domElement);
+	document.getElementById("bulding_environment").appendChild(renderer.domElement);
 	
 	window.addEventListener( 'resize', onWindowResize );
 	animate();
@@ -278,10 +303,13 @@ function onResourcesLoaded(){
 					}
 				});
 
-				if(models[key].model_mesh == null ){
-					gltf.scene.scale.set(8, 8 , 8);
-				}else{
-					gltf.scene.scale.set(1, 1 , 1); 
+				if(models[key].model_mesh == 'ground' ){
+					gltf.scene.scale.set(0.7, 0.7 , 0.7);
+				}else if( models[key].model_mesh == 'character'){
+					gltf.scene.scale.set(4, 4 , 4); 
+				}
+				else{
+					gltf.scene.scale.set(0.8, 0.8 , 0.8); 
 				}
 				gltf.scene.position.set( models[key].dimensions_x , models[key].dimensions_y, models[key].dimensions_z); 
 				
@@ -304,7 +332,7 @@ function onClick() {
 
   raycaster.setFromCamera(mouse, camera);
 
-  var intersects = raycaster.intersectObjects(scene.children, true);
+  intersects = raycaster.intersectObjects(scene.children, true);
 
   if (intersects.length > 0) {
 
@@ -322,16 +350,24 @@ function animate(){
 	if( RESOURCES_LOADED == false ){
 		requestAnimationFrame(animate);
 		
-		loadingScreen.box.position.x -= 0.05;
-		if( loadingScreen.box.position.x < -10 ) loadingScreen.box.position.x = 10;
-		loadingScreen.box.position.y = Math.sin(loadingScreen.box.position.x);
-
+		// loadingScreen.box.position.x -= 0.05;
+		// if( loadingScreen.box.position.x < -10 ) loadingScreen.box.position.x = 10;
+		// loadingScreen.box.position.y = Math.sin(loadingScreen.box.position.x);
+		document.querySelector(
+			"body").style.visibility = "hidden";
+		document.querySelector(
+			"#loader").style.visibility = "visible";
+			
 		renderer.render(loadingScreen.scene, loadingScreen.camera);
 		return;
 	}
-
+	document.querySelector(
+		"#loader").style.display = "none";
+	document.querySelector(
+		"body").style.visibility = "visible";
 	requestAnimationFrame(animate);
-	
+	// updateCameraPosition();
+
 	// mesh.rotation.x += 0.01;
 	// mesh.rotation.y += 0.02;
 	// crate.rotation.y += 0.01;
